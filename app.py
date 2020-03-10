@@ -69,32 +69,35 @@ app.layout = dbc.Container([
 
         dbc.Row([
             dbc.Col([
-
+                dbc.Row([
+                    html.Div(
+                        dcc.RadioItems( 
+                        id="radio_mapa",
+                            options = [
+                                {'label': 'Confirmed', 'value': "Confirmed"},
+                                {'label': 'Death', 'value': "Deaths"},
+                                {'label': 'Recovered', 'value': "Recovered"}
+                            ],
+                            value = "Confirmed"
+                        ), className="pretty_container"
+                    )
+                    
+                ]),
                 dbc.Row([
                     html.Div(
                         dcc.Graph(
                             id = "mapa1",
-                        )
+                        ), className="pretty_container"
                     ),
                 ]),
-                dbc.Row([
-                    dcc.RadioItems( 
-                    id="radio_mapa",
-                        options = [
-                            {'label': 'Confirmed', 'value': "Confirmed"},
-                            {'label': 'Death', 'value': "Deaths"},
-                            {'label': 'Recovered', 'value': "Recovered"}
-                        ],
-                        value = "Confirmed"
-                    ), 
-                ]),
+                
 
                 dbc.Row(
                     html.Div(
                         dcc.Graph(
                             id = "mapa3",
                             figure = generar_serie_tiempo_mapa()
-                        )
+                        ),className="pretty_container"
                     )
                 )
 
@@ -107,7 +110,7 @@ app.layout = dbc.Container([
                     dcc.Graph(
                         id = "mapa2",
                         figure = generar_fuera_china()
-                    )
+                    ),className="pretty_container"
                 )
 
 
