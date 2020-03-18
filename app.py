@@ -12,14 +12,26 @@ import plotly.graph_objs as go
 from dash.dependencies import Output, Input, State
 import pandas as pd
 import plotly.express as px
+import io
+import requests
 
 
+def load_dataset(tipo):
+    url_confirmed=f"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-{tipo}.csv"
+    s=requests.get(url_confirmed).content
+    df=pd.read_csv(io.StringIO(s.decode('utf-8')))
+    df = df.drop(["Province/State", "Lat", "Long"], axis=1)
+    df = pd.DataFrame(df.set_index("Country/Region").stack()).reset_index()
+    df = df.rename(columns={"Country/Region":"Country","level_1":"Date", 0:tipo})
+    df["Date"] = pd.to_datetime(df["Date"])
+    df = df.groupby(["Date", "Country"])[tipo].max().reset_index()
+    return df
 
-df_data = pd.read_csv("data/covid_19_data.csv")
-df_data["Country"] = df_data["Country/Region"].str.replace("Mainland China", "China")
-df_data["Date"] = df_data["ObservationDate"]
-df_all = df_data.copy()
-df_data = df_data[df_data["Date"] == max(df_data["Date"])]
+# df_data = pd.read_csv("data/covid_19_data.csv")
+# df_data["Country"] = df_data["Country/Region"].str.replace("Mainland China", "China")
+# df_data["Date"] = df_data["ObservationDate"]
+# df_all = df_data.copy()
+# df_data = df_data[df_data["Date"] == max(df_data["Date"])]
 
 
 def generar_fuera_china():
@@ -52,6 +64,17 @@ def generar_serie_tiempo_mapa():
                         projection="natural earth", animation_frame="Date", title='Spread outside China over time')
         
     return fig
+
+df_confirmed = load_dataset("Confirmed")
+df_recovered = load_dataset("Recovered")
+df_deaths = load_dataset("Deaths")
+
+
+new_df = pd.merge(df_confirmed, df_recovered,  how='left', left_on=["Date", "Country"], right_on = ["Date", "Country"])
+df_data = pd.merge(new_df, df_deaths,  how='left', left_on=["Date", "Country"], right_on = ["Date", "Country"])
+
+df_all = df_data.copy()
+
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
@@ -129,7 +152,7 @@ app.layout = dbc.Container([
             [Input('radio_mapa', 'value')])
 
 def update_mapa1(input_value):
-    cuenta = df_data.groupby("Country")["Country", input_value].sum().reset_index()
+    cuenta = df_data.groupby("Country")[input_value].max().reset_index()
     cuenta = cuenta[cuenta[input_value]>0]
     if input_value == "Confirmed":
         maximo = 500
