@@ -27,13 +27,6 @@ def load_dataset(tipo):
     df = df.groupby(["Date", "Country"])[tipo].max().reset_index()
     return df
 
-# df_data = pd.read_csv("data/covid_19_data.csv")
-# df_data["Country"] = df_data["Country/Region"].str.replace("Mainland China", "China")
-# df_data["Date"] = df_data["ObservationDate"]
-# df_all = df_data.copy()
-# df_data = df_data[df_data["Date"] == max(df_data["Date"])]
-
-
 def generar_fuera_china():
     cuenta = df_data.groupby("Country")["Confirmed", "Recovered", "Deaths"].sum().reset_index()
     cuenta = cuenta[cuenta["Confirmed"]>0]
@@ -82,16 +75,12 @@ server = app.server
 
 app.layout = dbc.Container([
     html.Div([
-        html.H2(children="Coronavirus"),
-        ],
+        html.H2("Coronavirus", className="pretty_container", style={'text-align': 'center'}),
+        ],className="pretty_container"
 
     ),
     
-
     html.Div([
-
-        dbc.Row([
-            dbc.Col([
                 dbc.Row([
                     html.Div(
                         dcc.RadioItems( 
@@ -122,24 +111,17 @@ app.layout = dbc.Container([
                             figure = generar_serie_tiempo_mapa()
                         ),className="pretty_container"
                     )
+                ),
+                
+
+                dbc.Row(
+                    html.Div(
+                        dcc.Graph(
+                            id = "mapa2",
+                            figure = generar_fuera_china()
+                        ),className="pretty_container"
+                    )
                 )
-
-
-
-            ]),
-
-            dbc.Col([
-                html.Div(
-                    dcc.Graph(
-                        id = "mapa2",
-                        figure = generar_fuera_china()
-                    ),className="pretty_container"
-                )
-
-
-            ]),
-
-        ])
 
     ])
 
@@ -173,4 +155,4 @@ def update_mapa1(input_value):
 
 
 if __name__ == "__main__":
-    app.run_server(port=4060)
+    app.run_server(port=4080)
