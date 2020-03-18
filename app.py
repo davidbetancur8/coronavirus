@@ -58,6 +58,24 @@ def generar_serie_tiempo_mapa():
         
     return fig
 
+def generar_casos(tipo):
+    importantes = ["Colombia", "Italy", "Spain", "France", "US", "Germany", "South Korea"]
+    df_prin = df_data[df_data["Country"].isin(importantes)]
+    df_prin = df_prin[df_prin["Confirmed"] > 0]
+    df_prin['start_date'] = df_prin.groupby('Country')['Date'].transform('min')
+    df_prin["days_since_start"] = (df_prin["Date"] - df_prin['start_date']).dt.days
+
+    fig = px.line(df_prin, x="days_since_start", y=tipo, color='Country')
+
+    fig.update_layout(title='CoVid cases',
+                   xaxis_title='Days from first confirmed in each country',
+                   yaxis_title=f'# of {tipo}',
+                   xaxis=dict(range=[0, 50]),
+                   yaxis=dict(range=[0, 200])
+                 )
+    return fig
+
+
 df_confirmed = load_dataset("Confirmed")
 df_recovered = load_dataset("Recovered")
 df_deaths = load_dataset("Deaths")
@@ -107,6 +125,15 @@ app.layout = dbc.Container([
                 dbc.Row(
                     html.Div(
                         dcc.Graph(
+                            id = "casos",
+                        ),className="pretty_container"
+                    )
+                ),
+                
+
+                dbc.Row(
+                    html.Div(
+                        dcc.Graph(
                             id = "mapa3",
                             figure = generar_serie_tiempo_mapa()
                         ),className="pretty_container"
@@ -151,6 +178,15 @@ def update_mapa1(input_value):
                             range_color=[1,maximo], 
                             color_continuous_scale="Sunsetdark")   
     return mapa
+
+
+
+@app.callback(Output("casos", "figure"),
+            [Input('radio_mapa', 'value')])
+
+def update_mapa1(input_value):
+    fig = generar_casos(input_value)
+    return fig
 
 
 
