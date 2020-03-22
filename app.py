@@ -28,10 +28,10 @@ def load_dataset(tipo):
     return df
 
 def generar_fuera_china():
-    cuenta = df_data.groupby("Country")["Confirmed", "Recovered", "Deaths"].sum().reset_index()
+    cuenta = df_data.groupby("Country")["Confirmed", "Recovered", "Deaths"].max().reset_index()
     cuenta = cuenta[cuenta["Confirmed"]>0]
     row_latest = cuenta[((cuenta["Country"] != "China") & (cuenta["Country"] != "Others"))]
-    rl = row_latest.groupby('Country')['Confirmed', 'Deaths', 'Recovered'].sum().reset_index().sort_values(by='Confirmed', ascending=False).reset_index(drop=True)
+    rl = row_latest.groupby('Country')['Confirmed', 'Deaths', 'Recovered'].max().reset_index().sort_values(by='Confirmed', ascending=False).reset_index(drop=True)
     rl.head()
     rl.head().style.background_gradient(cmap='rainbow')
 
@@ -71,7 +71,7 @@ def generar_casos(tipo):
                    xaxis_title='Days from first confirmed in each country',
                    yaxis_title=f'# of {tipo}',
                    xaxis=dict(range=[0, 50]),
-                   yaxis=dict(range=[0, 200])
+                   yaxis=dict(range=[0, 500])
                  )
     return fig
 
@@ -164,11 +164,11 @@ def update_mapa1(input_value):
     cuenta = df_data.groupby("Country")[input_value].max().reset_index()
     cuenta = cuenta[cuenta[input_value]>0]
     if input_value == "Confirmed":
-        maximo = 500
+        maximo = 1000
     elif input_value == "Deaths":
-        maximo = 5
+        maximo = 50
     else:
-        maximo = 20
+        maximo = 100
     mapa = px.choropleth(cuenta, 
                             locations="Country", 
                             locationmode='country names', 
@@ -184,7 +184,7 @@ def update_mapa1(input_value):
 @app.callback(Output("casos", "figure"),
             [Input('radio_mapa', 'value')])
 
-def update_mapa1(input_value):
+def update_mapa2(input_value):
     fig = generar_casos(input_value)
     return fig
 
