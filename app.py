@@ -85,7 +85,9 @@ new_df = pd.merge(df_confirmed, df_recovered,  how='left', left_on=["Date", "Cou
 df_data = pd.merge(new_df, df_deaths,  how='left', left_on=["Date", "Country"], right_on = ["Date", "Country"])
 
 df_all = df_data.copy()
-
+total_confirmed = df_data.groupby("Country")["Confirmed"].max().sum()
+total_deaths = df_data.groupby("Country")["Deaths"].max().sum()
+total_recovered = df_data.groupby("Country")["Recovered"].max().sum()
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
@@ -94,6 +96,17 @@ server = app.server
 app.layout = dbc.Container([
     html.Div([
         html.H2("Coronavirus", className="pretty_container", style={'text-align': 'center'}),
+        html.Div([html.H2("Confirmed: ", style = {"color": "blue"}),
+                  html.H2(total_confirmed)], 
+                className="pretty_container", style={'text-align': 'center'}),
+
+        html.Div([html.H2("Deaths: ", style = {"color": "red"}),
+                        html.H2(total_deaths)], 
+                        className="pretty_container", style={'text-align': 'center'}),
+
+        html.Div([html.H2("Recovered: ", style = {"color": "green"}),
+                  html.H2(total_recovered)], 
+                className="pretty_container", style={'text-align': 'center'}),
         ],className="pretty_container"
 
     ),
