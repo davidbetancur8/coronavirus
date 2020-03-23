@@ -50,10 +50,11 @@ def generar_serie_tiempo_mapa():
     formated_gdf = gdf.copy()
     formated_gdf = formated_gdf[((formated_gdf['Country']!='China') & (formated_gdf['Country']!='Others'))]
     formated_gdf['Date'] = pd.to_datetime(formated_gdf['Date'])
+    formated_gdf = formated_gdf[formated_gdf["Date"] > pd.Timestamp(2020,2,1)]
     formated_gdf['Date'] = formated_gdf['Date'].dt.strftime('%m/%d/%Y')
-
+    
     fig = px.scatter_geo(formated_gdf, locations="Country", locationmode='country names', 
-                        color="Confirmed", size='Confirmed', hover_name="Country", range_color= [0, max(formated_gdf['Confirmed'])+2], 
+                        color="Confirmed", size='Confirmed', hover_name="Country", 
                         projection="natural earth", animation_frame="Date", title='Spread outside China over time')
         
     return fig
