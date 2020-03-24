@@ -17,7 +17,14 @@ import requests
 
 
 def load_dataset(tipo):
-    url_confirmed=f"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-{tipo}.csv"
+    if tipo == "Confirmed":
+        file = "time_series_covid19_confirmed_global.csv"
+    elif tipo == "Deaths":
+        file = "time_series_covid19_deaths_global.csv"
+    else:
+        file = "time_series_19-covid-Recovered.csv"
+
+    url_confirmed=f"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/{file}"
     s=requests.get(url_confirmed).content
     df=pd.read_csv(io.StringIO(s.decode('utf-8')))
     df = df.drop(["Province/State", "Lat", "Long"], axis=1)
