@@ -70,7 +70,7 @@ def generar_serie_tiempo_mapa():
     return fig
 
 def generar_casos(tipo):
-    importantes = ["Colombia", "Italy", "Spain", "France", "US", "Germany", "South Korea"]
+    importantes = ["Colombia", "Italy", "Spain", "France", "US", "Germany", "South Korea", "Brazil", "Mexico", "Chile" , "Panama"]
     df_prin = df_data[df_data["Country"].isin(importantes)]
     df_prin = df_prin[df_prin["Confirmed"] > 0]
     df_prin['start_date'] = df_prin.groupby('Country')['Date'].transform('min')
