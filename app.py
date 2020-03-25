@@ -362,14 +362,14 @@ app.layout = dbc.Container([
                         ),className="pretty_container"
                     )
                 ),
-                dbc.Row(
-                    html.Div(
-                        dcc.Graph(
-                            id = "casos_porcentaje",
-                            figure = generar_casos_porcentaje_graf(df_data)
-                        ),className="pretty_container"
-                    )
-                ),
+                # dbc.Row(
+                #     html.Div(
+                #         dcc.Graph(
+                #             id = "casos_porcentaje",
+                #             figure = generar_casos_porcentaje_graf(df_data)
+                #         ),className="pretty_container"
+                #     )
+                # ),
                 
 
                 dbc.Row(
