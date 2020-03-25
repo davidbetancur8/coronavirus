@@ -5,5 +5,4 @@ PyOpenSSL==19.1.0
 gunicorn==19.9.0
 requests==2.23.0
 country-list==0.1.5
-geopy==1.21.0
 countryinfo==0.1.0

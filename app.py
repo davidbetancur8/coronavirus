@@ -18,7 +18,6 @@ from urllib.request import urlopen
 import json
 
 from country_list import countries_for_language
-from  geopy.geocoders import Nominatim
 import numpy as np
 from countryinfo import CountryInfo
 
@@ -208,14 +207,15 @@ def get_code(row):
     codigo = list(spa.keys())[indice]
     return codigo
 
-def get_lat_long(row):
-    country =row["name"]
-    loc = geolocator.geocode(country)
-    row["lat"] = loc.latitude
-    row["long"] = loc.longitude
+def get_lat_long(row, df_lat_lon):
+    cod =row["codigos"]
+    row_cod = df_lat_lon[df_lat_lon["code"] == cod]
+    row["lat"] = row_cod["lat"].values[0]
+    row["long"] = row_cod["lon"].values[0]
     return row
 
 def generar_cuenta_importados():
+    df_lat_lon = pd.read_csv("data/lat_long.csv")
     df_data = pd.read_csv("data/Casos1.csv")
     df_data = df_data.loc[:,["Sexo", "País de procedencia"]]
     df_data["País de procedencia"] = df_data["País de procedencia"].fillna("Colombia")
@@ -226,8 +226,8 @@ def generar_cuenta_importados():
     df_data = df_data.replace("Isla Martín", "Colombia")
     df_data["codigos"] = df_data.apply(get_code, axis=1)
     df_data["name"] = df_data.apply(lambda x: eng[x["codigos"]], axis=1)
-    paises = pd.DataFrame(df_data["name"].unique()).rename(columns={0:"name"})
-    paises = paises.apply(get_lat_long, axis=1)
+
+    paises = df_data.apply(get_lat_long, df_lat_lon=df_lat_lon, axis=1).loc[:,["name", "lat", "long"]]
     df_data = df_data.merge(paises, on="name", how="left")
     df_data["end_lat"] = 2.889443
     df_data["end_long"] = -73.783892
