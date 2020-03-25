@@ -4,3 +4,6 @@ pandas
 requests
 dash==1.9.0
 dash-bootstrap-components==0.8.3
+country-list==0.1.5
+geopy==1.21.0
+countryinfo==0.1.0

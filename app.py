@@ -17,6 +17,15 @@ import requests
 from urllib.request import urlopen
 import json
 
+from country_list import countries_for_language
+from  geopy.geocoders import Nominatim
+import numpy as np
+from countryinfo import CountryInfo
+
+spa = dict(countries_for_language("es"))
+eng = dict(countries_for_language("en"))
+geolocator = Nominatim(user_agent="my-application", timeout=3)
+
 def load_dataset(tipo):
     if tipo == "Confirmed":
         file = "time_series_covid19_confirmed_global.csv"
@@ -35,7 +44,10 @@ def load_dataset(tipo):
     df = df.groupby(["Date", "Country"])[tipo].max().reset_index()
     return df
 
-def generar_fuera_china():
+
+
+
+def generar_fuera_china(df_data):
     cuenta = df_data.groupby("Country")["Confirmed", "Recovered", "Deaths"].max().reset_index()
     cuenta = cuenta[cuenta["Confirmed"]>0]
     row_latest = cuenta[((cuenta["Country"] != "China") & (cuenta["Country"] != "Others"))]
@@ -47,13 +59,24 @@ def generar_fuera_china():
     ncl['Affected'] = ncl['Confirmed'] - ncl['Deaths'] - ncl['Recovered']
     ncl = ncl.melt(id_vars="Country", value_vars=['Affected', 'Recovered', 'Deaths'])
 
+
+    return ncl
+
+def generar_barras_fuera_china(df_data):
+    ncl = generar_fuera_china(df_data)
     fig = px.bar(ncl.sort_values(['variable', 'value']), 
-                y="Country", x="value", color='variable', orientation='h', height=800,
-                # height=600, width=1000,
-                title='Number of Cases outside China')
+                y="Country", x="value", color='variable', orientation='h', height=800)
+    
+
+    fig.update_layout(title='Number of Cases outside China',
+                    font=dict(
+                            family="Courier New, monospace",
+                            size=15,
+                            color="#7f7f7f"))
     return fig
 
-def generar_serie_tiempo_mapa():
+
+def generar_serie_tiempo(df_all):
     gdf = df_all.groupby(['Date', 'Country'])['Confirmed', 'Deaths', 'Recovered'].max().reset_index()
     formated_gdf = gdf.copy()
     formated_gdf = formated_gdf[((formated_gdf['Country']!='China') & (formated_gdf['Country']!='Others'))]
@@ -61,33 +84,77 @@ def generar_serie_tiempo_mapa():
     # formated_gdf = formated_gdf[formated_gdf["Date"] > pd.Timestamp(2020,2,1)]
     formated_gdf['Date'] = formated_gdf['Date'].dt.strftime('%m/%d/%Y')
     formated_gdf['size'] = formated_gdf['Confirmed'].pow(0.3)
+    return formated_gdf
 
+def generar_serie_tiempo_mapa(df_all):
+    formated_gdf = generar_serie_tiempo(df_all)
     fig = px.scatter_geo(formated_gdf, locations="Country", locationmode='country names', 
                         color="Confirmed", size='size', hover_name="Country", 
                         projection="natural earth", animation_frame="Date", 
-                        range_color= [0, max(formated_gdf['Confirmed'])+2],
-                        title='Spread outside China over time')
+                        range_color= [0, max(formated_gdf['Confirmed'])+2])
+
+    fig.update_layout(title='Spread outside China over time',
+                        font=dict(
+                                family="Courier New, monospace",
+                                size=15,
+                                color="#7f7f7f"
+                            ),
+                 )
         
     return fig
 
-def generar_casos(tipo):
-    importantes = ["Colombia", "Italy", "Spain", "France", "US", "Germany", "South Korea", "Brazil", "Mexico", "Chile" , "Panama"]
+
+def generar_casos(tipo, df_data):
+    importantes = ["Colombia", "Ecuador", "Italy", "Spain", "France", "US", "Germany", "South Korea", "Brazil", "Mexico", "Chile" , "Panama", "Peru"]
     df_prin = df_data[df_data["Country"].isin(importantes)]
     df_prin = df_prin[df_prin["Confirmed"] > 0]
     df_prin['start_date'] = df_prin.groupby('Country')['Date'].transform('min')
     df_prin["days_since_start"] = (df_prin["Date"] - df_prin['start_date']).dt.days
+    df_prin = df_prin.replace("US", "United States")
+    return df_prin
 
+def generar_casos_graf(tipo, df_data):
+    df_prin = generar_casos(tipo, df_data)
     fig = px.line(df_prin, x="days_since_start", y=tipo, color='Country')
 
     fig.update_layout(title='CoVid cases',
                    xaxis_title='Days from first confirmed in each country',
                    yaxis_title=f'# of {tipo}',
-                   xaxis=dict(range=[0, 50]),
-                   yaxis=dict(range=[0, 500])
+                   xaxis=dict(range=[0, 60]),
+                   yaxis=dict(range=[0, 1000]),
+                   font=dict(
+                        family="Courier New, monospace",
+                        size=15,
+                        color="#7f7f7f"
+                    ),
                  )
     return fig
 
-def genrar_cuenta_colombia():
+
+def generar_casos_porcentaje(df_data):
+    df_prin = generar_casos("Confirmed", df_data)
+    df_prin["population"] = df_prin.apply(lambda x: CountryInfo(x["Country"]).info()["population"], axis=1)
+    df_prin["percentage"] = df_prin["Confirmed"]/df_prin["population"]
+    return df_prin
+
+def generar_casos_porcentaje_graf(df_data):
+    df_prin = generar_casos_porcentaje(df_data)
+    fig = px.line(df_prin, x="days_since_start", y="percentage", color='Country')
+
+    fig.update_layout(title='CoVid cases percentages by country',
+                   xaxis_title='Days from first confirmed in each country',
+                   yaxis_title=f'% of Confirmed',
+
+                   font=dict(
+                        family="Courier New, monospace",
+                        size=15,
+                        color="#7f7f7f"
+                    ),
+                 )
+    return fig
+
+
+def generar_cuenta_colombia():
     lista = ["Amazonas","Antioquia","Arauca","Atlántico","Bogotá","Bolívar",
     "Boyacá","Caldas","Caquetá","Casanare","Cauca","Cesar","Chocó",
     "Córdoba","Cundinamarca","Guainía","Guaviare","Huila","La Guajira","Magdalena",
@@ -114,19 +181,104 @@ def genrar_cuenta_colombia():
     return df_merge
 
 def generar_mapa_colombia_cuenta():
-    df_merge = genrar_cuenta_colombia()
+    df_merge = generar_cuenta_colombia()
     with urlopen('https://gist.githubusercontent.com/john-guerra/43c7656821069d00dcbc/raw/be6a6e239cd5b5b803c6e7c2ec405b793a9064dd/Colombia.geo.json') as response:
         counties = json.load(response)
 
     fig = px.choropleth(df_merge, geojson=counties, color="total",
                         locations="NOMBRE_DPT", featureidkey="properties.NOMBRE_DPT",
-                        projection="mercator",scope="south america",color_continuous_scale=px.colors.sequential.Reds
+                        projection="mercator",scope="south america",color_continuous_scale=px.colors.sequential.Blues
                     )
     fig.update_geos(fitbounds="locations", visible=False, showcountries=True, countrycolor="Black",
         showsubunits=True)
-    fig.update_layout(margin={"r":0,"t":0,"l":0,"b":0})
+    fig.update_layout(
+        title_text = 'Confirmados en Colombia',
+        font=dict(
+            family="Courier New, monospace",
+            size=25,
+            color="#7f7f7f"
+        )
+    )
     return fig
 
+
+
+def get_code(row):
+    indice = list(spa.values()).index(row["País de procedencia"])
+    codigo = list(spa.keys())[indice]
+    return codigo
+
+def get_lat_long(row):
+    country =row["name"]
+    loc = geolocator.geocode(country)
+    row["lat"] = loc.latitude
+    row["long"] = loc.longitude
+    return row
+
+def generar_cuenta_importados():
+    df_data = pd.read_csv("data/Casos1.csv")
+    df_data = df_data.loc[:,["Sexo", "País de procedencia"]]
+    df_data["País de procedencia"] = df_data["País de procedencia"].fillna("Colombia")
+    df_data["País de procedencia"] = df_data["País de procedencia"].apply(lambda x: x.split("-")[0])
+    df_data["País de procedencia"] = df_data["País de procedencia"].str.strip()
+    df_data = df_data.replace("Esatdos Unidos", "Estados Unidos")
+    df_data = df_data.replace("Panama", "Panamá")
+    df_data = df_data.replace("Isla Martín", "Colombia")
+    df_data["codigos"] = df_data.apply(get_code, axis=1)
+    df_data["name"] = df_data.apply(lambda x: eng[x["codigos"]], axis=1)
+    paises = pd.DataFrame(df_data["name"].unique()).rename(columns={0:"name"})
+    paises = paises.apply(get_lat_long, axis=1)
+    df_data = df_data.merge(paises, on="name", how="left")
+    df_data["end_lat"] = 2.889443
+    df_data["end_long"] = -73.783892
+    df_data_grouped = df_data.groupby(["name", "lat", "long", "end_lat", "end_long"]).count().reset_index().drop(["País de procedencia", "codigos"], axis=1)
+    df_data_grouped = df_data_grouped.rename(columns={"Sexo":"cuenta"})
+    df_data_grouped["texto"] = df_data_grouped["name"] + ", number of confirmed: " + df_data_grouped["cuenta"].astype(str)
+    return df_data_grouped
+
+def generar_mapa_importados():
+    df_data_grouped = generar_cuenta_importados()
+    fig = go.Figure()
+    for i in range(len(df_data_grouped)):
+        fig.add_trace(
+            go.Scattergeo(
+                lon = [df_data_grouped['long'][i], df_data_grouped['end_long'][i]],
+                lat = [df_data_grouped['lat'][i], df_data_grouped['end_lat'][i]],
+                mode = 'lines',
+                line = dict(width = 2*(np.log(df_data_grouped['cuenta'][i]) / np.log(df_data_grouped['cuenta'].max())),
+                            color = '#051C57'),
+                opacity = 1,
+            )
+        )
+
+    fig.add_trace(go.Scattergeo(
+        lon = df_data_grouped['long'],
+        lat = df_data_grouped['lat'],
+        text = df_data_grouped['texto'],
+        hoverinfo = "text",
+        mode = 'markers',
+        marker = dict(
+            size = 10,
+            opacity = (np.log(df_data_grouped['cuenta']) / np.log(df_data_grouped['cuenta'].max())),
+            color="#051C57"
+        )))
+
+    fig.update_layout(
+        title_text = 'Procedencia de confirmados',
+        showlegend = False,
+        font=dict(
+            family="Courier New, monospace",
+            size=28,
+            color="#7f7f7f"
+        ),
+        geo = dict(
+            scope = 'world',
+            showland = True,
+            landcolor = 'rgb(243, 243, 243)',
+            countrycolor = 'rgb(204, 204, 204)',
+        ),
+    )
+    return fig
 
 
 
@@ -175,6 +327,14 @@ app.layout = dbc.Container([
                 ]),
                 dbc.Row([
                     html.Div(
+                        dcc.Graph(
+                            id = "mapa_colombia_importados",
+                            figure = generar_mapa_importados()
+                        ), className="pretty_container"
+                    ),
+                ]),
+                dbc.Row([
+                    html.Div(
                         dcc.RadioItems( 
                         id="radio_mapa",
                             options = [
@@ -203,13 +363,21 @@ app.layout = dbc.Container([
                         ),className="pretty_container"
                     )
                 ),
+                dbc.Row(
+                    html.Div(
+                        dcc.Graph(
+                            id = "casos_porcentaje",
+                            figure = generar_casos_porcentaje_graf(df_data)
+                        ),className="pretty_container"
+                    )
+                ),
                 
 
                 dbc.Row(
                     html.Div(
                         dcc.Graph(
                             id = "mapa3",
-                            figure = generar_serie_tiempo_mapa()
+                            figure = generar_serie_tiempo_mapa(df_all)
                         ),className="pretty_container"
                     )
                 ),
@@ -219,7 +387,7 @@ app.layout = dbc.Container([
                     html.Div(
                         dcc.Graph(
                             id = "mapa2",
-                            figure = generar_fuera_china()
+                            figure = generar_barras_fuera_china(df_data)
                         ),className="pretty_container"
                     )
                 )
@@ -259,7 +427,7 @@ def update_mapa1(input_value):
             [Input('radio_mapa', 'value')])
 
 def update_mapa2(input_value):
-    fig = generar_casos(input_value)
+    fig = generar_casos_graf(input_value, df_data)
     return fig
 
 
