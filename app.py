@@ -23,7 +23,6 @@ from countryinfo import CountryInfo
 
 spa = dict(countries_for_language("es"))
 eng = dict(countries_for_language("en"))
-geolocator = Nominatim(user_agent="my-application", timeout=10)
 
 def load_dataset(tipo):
     if tipo == "Confirmed":
