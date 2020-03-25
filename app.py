@@ -131,7 +131,11 @@ def generar_casos_graf(tipo, df_data):
 
 def generar_casos_porcentaje(df_data):
     df_prin = generar_casos("Confirmed", df_data)
-    df_prin["population"] = df_prin.apply(lambda x: CountryInfo(x["Country"]).info()["population"], axis=1)
+    unicos = df_prin["Country"].unique()
+    pops = [CountryInfo(p).info()["population"] for p in unicos]
+    df_pops = pd.DataFrame({"Country":unicos, "population":pops})
+
+    df_prin = df_prin.merge(df_pops, on="Country", how="left")    
     df_prin["percentage"] = df_prin["Confirmed"]/df_prin["population"]
     return df_prin
 
@@ -362,14 +366,14 @@ app.layout = dbc.Container([
                         ),className="pretty_container"
                     )
                 ),
-                # dbc.Row(
-                #     html.Div(
-                #         dcc.Graph(
-                #             id = "casos_porcentaje",
-                #             figure = generar_casos_porcentaje_graf(df_data)
-                #         ),className="pretty_container"
-                #     )
-                # ),
+                dbc.Row(
+                    html.Div(
+                        dcc.Graph(
+                            id = "casos_porcentaje",
+                            figure = generar_casos_porcentaje_graf(df_data)
+                        ),className="pretty_container"
+                    )
+                ),
                 
 
                 dbc.Row(
