@@ -30,7 +30,7 @@ def load_dataset(tipo):
     elif tipo == "Deaths":
         file = "time_series_covid19_deaths_global.csv"
     else:
-        file = "time_series_19-covid-Recovered.csv"
+        file = "time_series_covid19_recovered_global.csv"
 
     url_confirmed=f"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/{file}"
     s=requests.get(url_confirmed).content
@@ -41,7 +41,6 @@ def load_dataset(tipo):
     df["Date"] = pd.to_datetime(df["Date"])
     df = df.groupby(["Date", "Country"])[tipo].max().reset_index()
     return df
-
 
 
 
@@ -86,7 +85,6 @@ def generar_serie_tiempo(df_all):
 
 def generar_serie_tiempo_mapa(df_all):
     formated_gdf = generar_serie_tiempo(df_all)
-    print(formated_gdf)
     fig = px.scatter_geo(formated_gdf, locations="Country", locationmode='country names', 
                         color="Confirmed", size='size', hover_name="Country", 
                         projection="natural earth", animation_frame="Date", 
@@ -205,7 +203,6 @@ def generar_mapa_colombia_cuenta():
     return fig
 
 
-
 def get_code(row):
     indice = list(spa.values()).index(row["País de procedencia"])
     codigo = list(spa.keys())[indice]
@@ -299,6 +296,8 @@ total_confirmed = df_data.groupby("Country")["Confirmed"].max().sum()
 total_deaths = df_data.groupby("Country")["Deaths"].max().sum()
 total_recovered = df_data.groupby("Country")["Recovered"].max().sum()
 
+total_colombia = pd.read_csv("data/Casos1.csv")["ID de caso"].max()
+
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
 
@@ -306,16 +305,20 @@ server = app.server
 app.layout = dbc.Container([
     html.Div([
         html.H2("Coronavirus", className="pretty_container", style={'text-align': 'center'}),
-        html.Div([html.H2("Confirmed: ", style = {"color": "blue"}),
+        html.Div([html.H2("Confirmed: ", style = {"color": "#14378F "}),
                   html.H2(total_confirmed)], 
                 className="pretty_container", style={'text-align': 'center'}),
 
-        html.Div([html.H2("Deaths: ", style = {"color": "red"}),
+        html.Div([html.H2("Deaths: ", style = {"color": "#AF1E3E "}),
                         html.H2(total_deaths)], 
                         className="pretty_container", style={'text-align': 'center'}),
 
-        html.Div([html.H2("Recovered: ", style = {"color": "green"}),
+        html.Div([html.H2("Recovered: ", style = {"color": "#07830D"}),
                   html.H2(total_recovered)], 
+                className="pretty_container", style={'text-align': 'center'}),
+        
+        html.Div([html.H2("Confirmados en Colombia: ", style = {"color": "#89690E"}),
+                  html.H2(total_colombia)], 
                 className="pretty_container", style={'text-align': 'center'}),
         ],className="pretty_container"
 
@@ -410,20 +413,27 @@ def update_mapa1(input_value):
     cuenta = df_data.groupby("Country")[input_value].max().reset_index()
     cuenta = cuenta[cuenta[input_value]>0]
     if input_value == "Confirmed":
-        maximo = 1000
+        maximo = 5000
     elif input_value == "Deaths":
         maximo = 50
     else:
-        maximo = 100
-    mapa = px.choropleth(cuenta, 
+        maximo = 500
+    fig = px.choropleth(cuenta, 
                             locations="Country", 
                             locationmode='country names', 
                             color=input_value, 
                             hover_name="Country", 
-                            title=f'Countries with {input_value} Cases', 
                             range_color=[1,maximo], 
-                            color_continuous_scale="Sunsetdark")   
-    return mapa
+                            color_continuous_scale="Sunsetdark")  
+
+    fig.update_layout(title=f'Countries with {input_value} Cases',
+                        font=dict(
+                                family="Courier New, monospace",
+                                size=15,
+                                color="#7f7f7f"
+                            ),
+                 )
+    return fig
 
 
 
@@ -437,4 +447,4 @@ def update_mapa2(input_value):
 
 
 if __name__ == "__main__":
-    app.run_server(port=4080)
+    app.run_server(port=4070)
