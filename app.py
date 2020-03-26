@@ -81,11 +81,12 @@ def generar_serie_tiempo(df_all):
     formated_gdf['Date'] = pd.to_datetime(formated_gdf['Date'])
     # formated_gdf = formated_gdf[formated_gdf["Date"] > pd.Timestamp(2020,2,1)]
     formated_gdf['Date'] = formated_gdf['Date'].dt.strftime('%m/%d/%Y')
-    formated_gdf['size'] = formated_gdf['Confirmed'].pow(0.3)
+    formated_gdf['size'] = formated_gdf['Confirmed'].pow(0.3).fillna(0)
     return formated_gdf
 
 def generar_serie_tiempo_mapa(df_all):
     formated_gdf = generar_serie_tiempo(df_all)
+    print(formated_gdf)
     fig = px.scatter_geo(formated_gdf, locations="Country", locationmode='country names', 
                         color="Confirmed", size='size', hover_name="Country", 
                         projection="natural earth", animation_frame="Date", 
