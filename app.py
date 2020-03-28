@@ -203,6 +203,28 @@ def generar_mapa_colombia_cuenta():
     return fig
 
 
+def generar_por_dia_colombia():
+    df_data = pd.read_csv("data/Casos1.csv")
+    cuenta = pd.DataFrame(df_data.groupby("Fecha de diagnóstico")["ID de caso"].count()).reset_index()
+    cuenta = cuenta.rename(columns={"ID de caso":"cuenta"})
+    return cuenta
+
+def generar_por_dia_barras_colombia():
+    cuenta = generar_por_dia_colombia()
+    fig = px.bar(data_frame=cuenta, x="Fecha de diagnóstico", y="cuenta")
+    fig.update_layout(
+        title_text = 'Confirmados por día en Colombia',
+        font=dict(
+            family="Courier New, monospace",
+            size=10,
+            color="#7f7f7f"
+        ),
+        titlefont= dict(size= 25)
+
+    )
+    return fig
+
+
 def get_code(row):
     indice = list(spa.values()).index(row["País de procedencia"])
     codigo = list(spa.keys())[indice]
@@ -337,6 +359,14 @@ app.layout = dbc.Container([
                         dcc.Graph(
                             id = "mapa_colombia_importados",
                             figure = generar_mapa_importados()
+                        ), className="pretty_container"
+                    ),
+                ]),
+                dbc.Row([
+                    html.Div(
+                        dcc.Graph(
+                            id = "barras_por_dia_colombia",
+                            figure = generar_por_dia_barras_colombia()
                         ), className="pretty_container"
                     ),
                 ]),
