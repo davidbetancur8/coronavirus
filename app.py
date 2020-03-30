@@ -226,9 +226,12 @@ def generar_por_dia_barras_colombia():
 
 
 def get_code(row):
-    indice = list(spa.values()).index(row["País de procedencia"])
-    codigo = list(spa.keys())[indice]
-    return codigo
+    try:
+        indice = list(spa.values()).index(row["País de procedencia"])
+        codigo = list(spa.keys())[indice]
+        return codigo
+    except:
+        return "CO"
 
 def get_lat_long(row, df_lat_lon):
     cod =row["codigos"]
