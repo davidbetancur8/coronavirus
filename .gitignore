@@ -2,3 +2,4 @@
 /venv_app
 .vscode/
 .ipynb_checkpoints
+__pycache__/

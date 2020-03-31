@@ -243,6 +243,7 @@ def get_lat_long(row, df_lat_lon):
 def generar_cuenta_importados():
     df_lat_lon = pd.read_csv("data/lat_long.csv")
     df_data = pd.read_csv("data/Casos1.csv")
+    
     df_data = df_data.loc[:,["Sexo", "País de procedencia"]]
     df_data["País de procedencia"] = df_data["País de procedencia"].fillna("Colombia")
     df_data["País de procedencia"] = df_data["País de procedencia"].apply(lambda x: x.split("-")[0])
@@ -252,9 +253,10 @@ def generar_cuenta_importados():
     df_data = df_data.replace("Isla Martín", "Colombia")
     df_data["codigos"] = df_data.apply(get_code, axis=1)
     df_data["name"] = df_data.apply(lambda x: eng[x["codigos"]], axis=1)
-
     paises = df_data.apply(get_lat_long, df_lat_lon=df_lat_lon, axis=1).loc[:,["name", "lat", "long"]]
+    paises = paises.drop_duplicates()
     df_data = df_data.merge(paises, on="name", how="left")
+    print(paises)
     df_data["end_lat"] = 2.889443
     df_data["end_long"] = -73.783892
     df_data_grouped = df_data.groupby(["name", "lat", "long", "end_lat", "end_long"]).count().reset_index().drop(["País de procedencia", "codigos"], axis=1)
@@ -264,6 +266,7 @@ def generar_cuenta_importados():
 
 def generar_mapa_importados():
     df_data_grouped = generar_cuenta_importados()
+
     fig = go.Figure()
     for i in range(len(df_data_grouped)):
         fig.add_trace(
