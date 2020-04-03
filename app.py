@@ -156,7 +156,7 @@ def generar_casos_porcentaje_graf(df_data):
 
 
 def generar_cuenta_colombia():
-    lista = ["Amazonas","Antioquia","Arauca","Atlántico","Bogotá","Bolívar",
+    lista = ["Amazonas","Antioquia","Arauca","Atlántico","Bogotá D.C.","Bolívar",
     "Boyacá","Caldas","Caquetá","Casanare","Cauca","Cesar","Chocó",
     "Córdoba","Cundinamarca","Guainía","Guaviare","Huila","La Guajira","Magdalena",
     "Meta","Nariño","Norte de Santander","Putumayo","Quindío","Risaralda","San Andrés y Providencia",
@@ -166,13 +166,16 @@ def generar_cuenta_colombia():
     df_ceros = pd.DataFrame({"NOMBRE_DPT":lista, "cuenta_ceros":ceros})
 
     df_data = pd.read_csv("data/Casos1.csv")
-    df_data = df_data.rename(columns={"Departamento": "NOMBRE_DPT"})
+    df_data = df_data.rename(columns={"Departamento o Distrito": "NOMBRE_DPT"})
     df_data["NOMBRE_DPT"] = df_data["NOMBRE_DPT"].str.upper()
     df_cuenta = pd.DataFrame(df_data.groupby("NOMBRE_DPT")["ID de caso"].count()).reset_index().rename(columns={"ID de caso": "cuenta"})
+    
     df_merge = df_ceros.merge(df_cuenta, on="NOMBRE_DPT", how="left")
+
+
     df_merge["total"] = df_merge["cuenta"] + df_merge["cuenta_ceros"]
     df_merge = df_merge.drop(["cuenta", "cuenta_ceros"], axis=1)
-    nombres_dict = {"BOGOTÁ": "SANTAFE DE BOGOTA D.C",
+    nombres_dict = {"BOGOTÁ D.C.": "SANTAFE DE BOGOTA D.C",
                     "VALLE": "VALLE DEL CAUCA"}
     for dept in nombres_dict:
         df_merge = df_merge.replace(dept, nombres_dict[dept])
@@ -256,7 +259,6 @@ def generar_cuenta_importados():
     paises = df_data.apply(get_lat_long, df_lat_lon=df_lat_lon, axis=1).loc[:,["name", "lat", "long"]]
     paises = paises.drop_duplicates()
     df_data = df_data.merge(paises, on="name", how="left")
-    print(paises)
     df_data["end_lat"] = 2.889443
     df_data["end_long"] = -73.783892
     df_data_grouped = df_data.groupby(["name", "lat", "long", "end_lat", "end_long"]).count().reset_index().drop(["País de procedencia", "codigos"], axis=1)
