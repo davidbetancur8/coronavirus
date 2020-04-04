@@ -118,7 +118,7 @@ def generar_casos_graf(tipo, df_data):
                    xaxis_title='Days from first confirmed in each country',
                    yaxis_title=f'# of {tipo}',
                    xaxis=dict(range=[0, 60]),
-                   yaxis=dict(range=[0, 1000]),
+                   yaxis=dict(range=[0, 5000]),
                    font=dict(
                         family="Courier New, monospace",
                         size=15,
@@ -206,8 +206,19 @@ def generar_mapa_colombia_cuenta():
     return fig
 
 
+def arreglar_fecha(x):
+    lista = x.split("/")
+    if len(lista[1]) == 1:
+        mes = "0" + lista[1]
+        return f"{lista[0]}/{mes}/{lista[2]}"
+    elif len(lista[1]) == 2:
+        return x
+
+
 def generar_por_dia_colombia():
     df_data = pd.read_csv("data/Casos1.csv")
+    df_data["Fecha de diagnóstico"] = df_data["Fecha de diagnóstico"].apply(arreglar_fecha)
+    df_data["Fecha de diagnóstico"] = pd.to_datetime(df_data["Fecha de diagnóstico"], dayfirst=True)
     cuenta = pd.DataFrame(df_data.groupby("Fecha de diagnóstico")["ID de caso"].count()).reset_index()
     cuenta = cuenta.rename(columns={"ID de caso":"cuenta"})
     return cuenta
