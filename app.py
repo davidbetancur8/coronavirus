@@ -21,6 +21,8 @@ from country_list import countries_for_language
 import numpy as np
 from countryinfo import CountryInfo
 
+from sodapy import Socrata
+
 spa = dict(countries_for_language("es"))
 eng = dict(countries_for_language("en"))
 
@@ -44,14 +46,13 @@ def load_dataset(tipo):
 
 
 def load_colombia_df():
-    url="https://www.datos.gov.co/resource/gt2j-8ykr.csv"
-    s=requests.get(url).content
-    df=pd.read_csv(io.StringIO(s.decode('utf-8')))
-    return df
+    client = Socrata("www.datos.gov.co", None)  # https://www.datos.gov.co/es/profile/edit/developer_settings   por si no funciona
+    results = client.get("gt2j-8ykr", limit=100000)
+    results_df = pd.DataFrame.from_records(results)
+    return results_df
 
 
-df = load_colombia_df()
-print(df)
+
 
 
 
@@ -285,7 +286,6 @@ def generar_cuenta_importados(df_data):
     df_data = df_data.merge(paises, on="name", how="left")
     df_data["end_lat"] = 2.889443
     df_data["end_long"] = -73.783892
-    print(df_data)
     df_data_grouped = df_data.groupby(["name", "lat", "long", "end_lat", "end_long"]).count().reset_index().drop(["País de procedencia", "codigos"], axis=1)
     df_data_grouped = df_data_grouped.rename(columns={"sexo":"cuenta"})
     df_data_grouped["texto"] = df_data_grouped["name"] + ", number of confirmed: " + df_data_grouped["cuenta"].astype(str)
@@ -353,7 +353,9 @@ total_recovered = df_data.groupby("Country")["Recovered"].max().sum()
 
 
 df_col = load_colombia_df()
+df_col["id_de_caso"] = df_col["id_de_caso"].astype(int)
 total_colombia = df_col["id_de_caso"].max()
+
 
 
 
