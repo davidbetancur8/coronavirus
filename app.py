@@ -43,6 +43,18 @@ def load_dataset(tipo):
     return df
 
 
+def load_colombia_df():
+    url="https://www.datos.gov.co/resource/gt2j-8ykr.csv"
+    s=requests.get(url).content
+    df=pd.read_csv(io.StringIO(s.decode('utf-8')))
+    return df
+
+
+df = load_colombia_df()
+print(df)
+
+
+
 
 def generar_fuera_china(df_data):
     cuenta = df_data.groupby("Country")["Confirmed", "Recovered", "Deaths"].max().reset_index()
@@ -155,7 +167,7 @@ def generar_casos_porcentaje_graf(df_data):
     return fig
 
 
-def generar_cuenta_colombia():
+def generar_cuenta_colombia(df_data):
     lista = ["Amazonas","Antioquia","Arauca","Atlántico","Bogotá D.C.","Bolívar",
     "Boyacá","Caldas","Caquetá","Casanare","Cauca","Cesar","Chocó",
     "Córdoba","Cundinamarca","Guainía","Guaviare","Huila","La Guajira","Magdalena",
@@ -165,10 +177,10 @@ def generar_cuenta_colombia():
     ceros = [0]*len(lista)
     df_ceros = pd.DataFrame({"NOMBRE_DPT":lista, "cuenta_ceros":ceros})
 
-    df_data = pd.read_csv("data/Casos1.csv")
-    df_data = df_data.rename(columns={"Departamento o Distrito": "NOMBRE_DPT"})
+    # df_data = pd.read_csv("data/Casos1.csv")
+    df_data = df_data.rename(columns={"departamento": "NOMBRE_DPT"})
     df_data["NOMBRE_DPT"] = df_data["NOMBRE_DPT"].str.upper()
-    df_cuenta = pd.DataFrame(df_data.groupby("NOMBRE_DPT")["ID de caso"].count()).reset_index().rename(columns={"ID de caso": "cuenta"})
+    df_cuenta = pd.DataFrame(df_data.groupby("NOMBRE_DPT")["id_de_caso"].count()).reset_index().rename(columns={"id_de_caso": "cuenta"})
     
     df_merge = df_ceros.merge(df_cuenta, on="NOMBRE_DPT", how="left")
 
@@ -184,8 +196,8 @@ def generar_cuenta_colombia():
     df_merge = df_merge.replace("NARINO", "NARIÑO")
     return df_merge
 
-def generar_mapa_colombia_cuenta():
-    df_merge = generar_cuenta_colombia()
+def generar_mapa_colombia_cuenta(df_data):
+    df_merge = generar_cuenta_colombia(df_data)
     with urlopen('https://gist.githubusercontent.com/john-guerra/43c7656821069d00dcbc/raw/be6a6e239cd5b5b803c6e7c2ec405b793a9064dd/Colombia.geo.json') as response:
         counties = json.load(response)
 
@@ -215,16 +227,17 @@ def arreglar_fecha(x):
         return x
 
 
-def generar_por_dia_colombia():
-    df_data = pd.read_csv("data/Casos1.csv")
+def generar_por_dia_colombia(df_data):
+    # df_data = pd.read_csv("data/Casos1.csv")
+    df_data = df_data.rename(columns={"fecha_de_diagn_stico": "Fecha de diagnóstico"})
     df_data["Fecha de diagnóstico"] = df_data["Fecha de diagnóstico"].apply(arreglar_fecha)
     df_data["Fecha de diagnóstico"] = pd.to_datetime(df_data["Fecha de diagnóstico"], dayfirst=True)
-    cuenta = pd.DataFrame(df_data.groupby("Fecha de diagnóstico")["ID de caso"].count()).reset_index()
-    cuenta = cuenta.rename(columns={"ID de caso":"cuenta"})
+    cuenta = pd.DataFrame(df_data.groupby("Fecha de diagnóstico")["id_de_caso"].count()).reset_index()
+    cuenta = cuenta.rename(columns={"id_de_caso":"cuenta"})
     return cuenta
 
-def generar_por_dia_barras_colombia():
-    cuenta = generar_por_dia_colombia()
+def generar_por_dia_barras_colombia(df_data):
+    cuenta = generar_por_dia_colombia(df_data)
     fig = px.bar(data_frame=cuenta, x="Fecha de diagnóstico", y="cuenta")
     fig.update_layout(
         title_text = 'Confirmados por día en Colombia',
@@ -254,11 +267,11 @@ def get_lat_long(row, df_lat_lon):
     row["long"] = row_cod["lon"].values[0]
     return row
 
-def generar_cuenta_importados():
+def generar_cuenta_importados(df_data):
     df_lat_lon = pd.read_csv("data/lat_long.csv")
-    df_data = pd.read_csv("data/Casos1.csv")
-    
-    df_data = df_data.loc[:,["Sexo", "País de procedencia"]]
+    # df_data = pd.read_csv("data/Casos1.csv")
+    df_data = df_data.rename(columns={"pa_s_de_procedencia": "País de procedencia"})
+    df_data = df_data.loc[:,["sexo", "País de procedencia"]]
     df_data["País de procedencia"] = df_data["País de procedencia"].fillna("Colombia")
     df_data["País de procedencia"] = df_data["País de procedencia"].apply(lambda x: x.split("-")[0])
     df_data["País de procedencia"] = df_data["País de procedencia"].str.strip()
@@ -272,14 +285,14 @@ def generar_cuenta_importados():
     df_data = df_data.merge(paises, on="name", how="left")
     df_data["end_lat"] = 2.889443
     df_data["end_long"] = -73.783892
+    print(df_data)
     df_data_grouped = df_data.groupby(["name", "lat", "long", "end_lat", "end_long"]).count().reset_index().drop(["País de procedencia", "codigos"], axis=1)
-    df_data_grouped = df_data_grouped.rename(columns={"Sexo":"cuenta"})
+    df_data_grouped = df_data_grouped.rename(columns={"sexo":"cuenta"})
     df_data_grouped["texto"] = df_data_grouped["name"] + ", number of confirmed: " + df_data_grouped["cuenta"].astype(str)
     return df_data_grouped
 
-def generar_mapa_importados():
-    df_data_grouped = generar_cuenta_importados()
-
+def generar_mapa_importados(df_data):
+    df_data_grouped = generar_cuenta_importados(df_data)
     fig = go.Figure()
     for i in range(len(df_data_grouped)):
         fig.add_trace(
@@ -337,7 +350,13 @@ total_confirmed = df_data.groupby("Country")["Confirmed"].max().sum()
 total_deaths = df_data.groupby("Country")["Deaths"].max().sum()
 total_recovered = df_data.groupby("Country")["Recovered"].max().sum()
 
-total_colombia = pd.read_csv("data/Casos1.csv")["ID de caso"].max()
+
+
+df_col = load_colombia_df()
+total_colombia = df_col["id_de_caso"].max()
+
+
+
 
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 server = app.server
@@ -369,7 +388,7 @@ app.layout = dbc.Container([
                     html.Div(
                         dcc.Graph(
                             id = "mapa_colombia",
-                            figure = generar_mapa_colombia_cuenta()
+                            figure = generar_mapa_colombia_cuenta(df_col)
                         ), className="pretty_container"
                     ),
                 ]),
@@ -377,7 +396,7 @@ app.layout = dbc.Container([
                     html.Div(
                         dcc.Graph(
                             id = "mapa_colombia_importados",
-                            figure = generar_mapa_importados()
+                            figure = generar_mapa_importados(df_col)
                         ), className="pretty_container"
                     ),
                 ]),
@@ -385,7 +404,7 @@ app.layout = dbc.Container([
                     html.Div(
                         dcc.Graph(
                             id = "barras_por_dia_colombia",
-                            figure = generar_por_dia_barras_colombia()
+                            figure = generar_por_dia_barras_colombia(df_col)
                         ), className="pretty_container"
                     ),
                 ]),
