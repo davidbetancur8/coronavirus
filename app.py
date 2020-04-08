@@ -262,10 +262,14 @@ def get_code(row):
         return "CO"
 
 def get_lat_long(row, df_lat_lon):
-    cod =row["codigos"]
-    row_cod = df_lat_lon[df_lat_lon["code"] == cod]
-    row["lat"] = row_cod["lat"].values[0]
-    row["long"] = row_cod["lon"].values[0]
+    try:
+        cod =row["codigos"]
+        row_cod = df_lat_lon[df_lat_lon["code"] == cod]
+        row["lat"] = row_cod["lat"].values[0]
+        row["long"] = row_cod["lon"].values[0]
+    except:
+        print(row_cod)
+        print(row)
     return row
 
 def generar_cuenta_importados(df_data):
