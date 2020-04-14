@@ -7,3 +7,4 @@ requests==2.23.0
 country-list==0.1.5
 countryinfo==0.1.0
 Sodapy
+Unidecode==1.1.1

@@ -22,8 +22,15 @@ import numpy as np
 from countryinfo import CountryInfo
 
 from sodapy import Socrata
+import unidecode
+
+
 
 spa = dict(countries_for_language("es"))
+for k,v in spa.items():
+    spa.update({k: unidecode.unidecode(v.upper())})
+    
+
 eng = dict(countries_for_language("en"))
 
 def load_dataset(tipo):
@@ -142,13 +149,13 @@ def generar_casos_graf(tipo, df_data):
 
 
 def generar_casos_porcentaje(df_data):
-    df_prin = generar_casos("Confirmed", df_data)
+    df_prin = generar_casos("Deaths", df_data)
     unicos = df_prin["Country"].unique()
     pops = [CountryInfo(p).info()["population"] for p in unicos]
     df_pops = pd.DataFrame({"Country":unicos, "population":pops})
 
     df_prin = df_prin.merge(df_pops, on="Country", how="left")    
-    df_prin["percentage"] = df_prin["Confirmed"]/df_prin["population"]
+    df_prin["percentage"] = df_prin["Deaths"]/df_prin["population"]
     return df_prin
 
 def generar_casos_porcentaje_graf(df_data):
@@ -259,6 +266,7 @@ def get_code(row):
         codigo = list(spa.keys())[indice]
         return codigo
     except:
+        # print(row)
         return "CO"
 
 def get_lat_long(row, df_lat_lon):
@@ -280,8 +288,8 @@ def generar_cuenta_importados(df_data):
     df_data["País de procedencia"] = df_data["País de procedencia"].fillna("Colombia")
     df_data["País de procedencia"] = df_data["País de procedencia"].apply(lambda x: x.split("-")[0])
     df_data["País de procedencia"] = df_data["País de procedencia"].str.strip()
-    df_data = df_data.replace("Esatdos Unidos", "Estados Unidos")
-    df_data = df_data.replace("Panama", "Panamá")
+    df_data = df_data.replace("ESTADOS UNIDOS DE AMÉRICA", "ESTADOS UNIDOS")
+    df_data = df_data.replace("ESPAÑA", "ESPANA")
     df_data = df_data.replace("Isla Martín", "Colombia")
     df_data["codigos"] = df_data.apply(get_code, axis=1)
     df_data["name"] = df_data.apply(lambda x: eng[x["codigos"]], axis=1)
@@ -487,11 +495,11 @@ def update_mapa1(input_value):
     cuenta = df_data.groupby("Country")[input_value].max().reset_index()
     cuenta = cuenta[cuenta[input_value]>0]
     if input_value == "Confirmed":
-        maximo = 5000
+        maximo = 10000
     elif input_value == "Deaths":
-        maximo = 50
+        maximo = 1000
     else:
-        maximo = 500
+        maximo = 10000
     fig = px.choropleth(cuenta, 
                             locations="Country", 
                             locationmode='country names', 
