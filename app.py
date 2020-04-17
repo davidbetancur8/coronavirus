@@ -239,7 +239,7 @@ def generar_por_dia_colombia(df_data):
     # df_data = pd.read_csv("data/Casos1.csv")
     df_data = df_data.rename(columns={"fecha_de_diagn_stico": "Fecha de diagnóstico"})
     df_data["Fecha de diagnóstico"] = df_data["Fecha de diagnóstico"].apply(arreglar_fecha)
-    df_data["Fecha de diagnóstico"] = pd.to_datetime(df_data["Fecha de diagnóstico"], dayfirst=True)
+    df_data["Fecha de diagnóstico"] = pd.to_datetime(df_data["Fecha de diagnóstico"], dayfirst=True, errors = "coerce")
     cuenta = pd.DataFrame(df_data.groupby("Fecha de diagnóstico")["id_de_caso"].count()).reset_index()
     cuenta = cuenta.rename(columns={"id_de_caso":"cuenta"})
     return cuenta
