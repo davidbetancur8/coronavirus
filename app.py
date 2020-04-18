@@ -227,19 +227,23 @@ def generar_mapa_colombia_cuenta(df_data):
 
 
 def arreglar_fecha(x):
-    lista = x.split("/")
-    if len(lista[1]) == 1:
-        mes = "0" + lista[1]
-        return f"{lista[0]}/{mes}/{lista[2]}"
-    elif len(lista[1]) == 2:
-        return x
+    if len(x) > 13:
+        lista = x.split("-")
+        return f"{lista[1]}/{lista[2][:2]}/{lista[0]}"
+    else:
+        lista = x.split("/")
+        if len(lista[1]) == 1:
+            mes = "0" + lista[1]
+            return f"{lista[0]}/{mes}/{lista[2]}"
+        elif len(lista[1]) == 2:
+            return x
 
 
 def generar_por_dia_colombia(df_data):
     # df_data = pd.read_csv("data/Casos1.csv")
     df_data = df_data.rename(columns={"fecha_de_diagn_stico": "Fecha de diagnóstico"})
     df_data["Fecha de diagnóstico"] = df_data["Fecha de diagnóstico"].apply(arreglar_fecha)
-    df_data["Fecha de diagnóstico"] = pd.to_datetime(df_data["Fecha de diagnóstico"], dayfirst=True, errors = "coerce")
+    df_data["Fecha de diagnóstico"] = pd.to_datetime(df_data["Fecha de diagnóstico"], format = "%d/%m/%Y", errors="coerce")
     cuenta = pd.DataFrame(df_data.groupby("Fecha de diagnóstico")["id_de_caso"].count()).reset_index()
     cuenta = cuenta.rename(columns={"id_de_caso":"cuenta"})
     return cuenta
@@ -288,6 +292,7 @@ def generar_cuenta_importados(df_data):
     df_data["País de procedencia"] = df_data["País de procedencia"].fillna("Colombia")
     df_data["País de procedencia"] = df_data["País de procedencia"].apply(lambda x: x.split("-")[0])
     df_data["País de procedencia"] = df_data["País de procedencia"].str.strip()
+    df_data["País de procedencia"] = df_data["País de procedencia"].str.upper()
     df_data = df_data.replace("ESTADOS UNIDOS DE AMÉRICA", "ESTADOS UNIDOS")
     df_data = df_data.replace("ESPAÑA", "ESPANA")
     df_data = df_data.replace("Isla Martín", "Colombia")
