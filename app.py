@@ -164,7 +164,7 @@ def generar_casos_porcentaje_graf(df_data):
 
     fig.update_layout(title='CoVid cases percentages by country',
                    xaxis_title='Days from first confirmed in each country',
-                   yaxis_title=f'% of Confirmed',
+                   yaxis_title=f'% of Death',
 
                    font=dict(
                         family="Courier New, monospace",
@@ -229,7 +229,7 @@ def generar_mapa_colombia_cuenta(df_data):
 def arreglar_fecha(x):
     if len(x) > 13:
         lista = x.split("-")
-        return f"{lista[1]}/{lista[2][:2]}/{lista[0]}"
+        return f"{lista[2][:2]}/{lista[1]}/{lista[0]}"
     else:
         lista = x.split("/")
         if len(lista[1]) == 1:
@@ -293,9 +293,9 @@ def generar_cuenta_importados(df_data):
     df_data["País de procedencia"] = df_data["País de procedencia"].apply(lambda x: x.split("-")[0])
     df_data["País de procedencia"] = df_data["País de procedencia"].str.strip()
     df_data["País de procedencia"] = df_data["País de procedencia"].str.upper()
-    df_data = df_data.replace("ESTADOS UNIDOS DE AMÉRICA", "ESTADOS UNIDOS")
+    df_data = df_data.replace("ESTADOS UNIDOS DE AMERICA", "ESTADOS UNIDOS")
     df_data = df_data.replace("ESPAÑA", "ESPANA")
-    df_data = df_data.replace("Isla Martín", "Colombia")
+    df_data = df_data.replace("CURAZAO", "CURAÇAO")
     df_data["codigos"] = df_data.apply(get_code, axis=1)
     df_data["name"] = df_data.apply(lambda x: eng[x["codigos"]], axis=1)
     paises = df_data.apply(get_lat_long, df_lat_lon=df_lat_lon, axis=1).loc[:,["name", "lat", "long"]]
@@ -500,11 +500,11 @@ def update_mapa1(input_value):
     cuenta = df_data.groupby("Country")[input_value].max().reset_index()
     cuenta = cuenta[cuenta[input_value]>0]
     if input_value == "Confirmed":
-        maximo = 10000
+        maximo = 100000
     elif input_value == "Deaths":
-        maximo = 1000
-    else:
         maximo = 10000
+    else:
+        maximo = 100000
     fig = px.choropleth(cuenta, 
                             locations="Country", 
                             locationmode='country names', 
