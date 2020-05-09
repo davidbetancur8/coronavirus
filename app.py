@@ -241,7 +241,6 @@ def arreglar_fecha(x):
 
 def generar_por_dia_colombia(df_data):
     # df_data = pd.read_csv("data/Casos1.csv")
-    print(df_data.columns)
     df_data = df_data.rename(columns={"fecha_diagnostico": "Fecha de diagnóstico"})
     df_data["Fecha de diagnóstico"] = df_data["Fecha de diagnóstico"].apply(arreglar_fecha)
     df_data["Fecha de diagnóstico"] = pd.to_datetime(df_data["Fecha de diagnóstico"], format = "%d/%m/%Y", errors="coerce")
